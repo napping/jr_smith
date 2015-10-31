@@ -1,10 +1,9 @@
 package edu.upenn.cis455.mapreduce.worker;
 
-import com.sun.xml.internal.ws.api.pipe.FiberContextSwitchInterceptor;
 import edu.upenn.cis455.mapreduce.enumeration.WorkerStatus;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
+import java.util.Date;
 
 /**
  * @author brishi
@@ -16,12 +15,15 @@ public class WorkerContext {
     int keysRead;
     int keysWritten;
 
+    Date lastUpdated;
+
     public WorkerContext() {
         port = 8080;
         status = WorkerStatus.IDLE;
         job = "NO NAME YET.";
         keysRead = 0;
         keysWritten = 0;
+        lastUpdated = new Date();
     }
 
     public WorkerContext(HttpServletRequest request) {
@@ -30,8 +32,9 @@ public class WorkerContext {
         status = WorkerStatus.valueOf(request.getParameter("status"));
         keysRead = Integer.parseInt(request.getParameter("keysRead"));
         keysWritten = Integer.parseInt(request.getParameter("keysWritten"));
+        lastUpdated = new Date();
 
-        // TODO ? set last updated status time / last received
+        // TODO ? set last updated status time / last received UPDATE: done, right? ^
     }
 
     public int getPort() {
@@ -73,4 +76,13 @@ public class WorkerContext {
     public void setKeysWritten(int keysWritten) {
         this.keysWritten = keysWritten;
     }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
 }
