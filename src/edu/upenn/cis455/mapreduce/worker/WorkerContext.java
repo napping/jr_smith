@@ -9,6 +9,8 @@ import java.util.Date;
  * @author brishi
  */
 public class WorkerContext {
+
+    String ipAddress;
     int port;
     WorkerStatus status;
     String job;
@@ -27,6 +29,7 @@ public class WorkerContext {
     }
 
     public WorkerContext(HttpServletRequest request) {
+        ipAddress = request.getRemoteAddr();
         port = Integer.parseInt(request.getParameter("port"));
         job = request.getParameter("job");
         status = WorkerStatus.valueOf(request.getParameter("status"));
@@ -85,4 +88,19 @@ public class WorkerContext {
         this.lastUpdated = lastUpdated;
     }
 
+    public WorkerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WorkerStatus status) {
+        this.status = status;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
 }
