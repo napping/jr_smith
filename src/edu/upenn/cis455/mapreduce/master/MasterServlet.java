@@ -6,7 +6,6 @@ import edu.upenn.cis455.mapreduce.utils.MyHttpURLConnection;
 import edu.upenn.cis455.mapreduce.worker.WorkerContext;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
@@ -89,7 +88,7 @@ public class MasterServlet extends HttpServlet {
         }
     }
 
-    private void runMap() throws MalformedURLException {
+    private void runMap() throws IOException {
         int numWorkers = workers.size();
         String[] workersIPPort = new String[numWorkers];
 
@@ -136,7 +135,7 @@ public class MasterServlet extends HttpServlet {
         return true;
     }
 
-    private void runReduce() throws MalformedURLException {
+    private void runReduce() throws IOException {
         for (String s : workers.keySet()) {
             URL workerUrl = new URL("http://" + s + "/runmap");
 
