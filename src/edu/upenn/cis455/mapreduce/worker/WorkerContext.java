@@ -20,12 +20,9 @@ public class WorkerContext {
     Date lastUpdated;
 
     public WorkerContext() {
-        port = 8080;
         status = WorkerStatus.IDLE;
-        job = "NO NAME YET.";
         keysRead = 0;
         keysWritten = 0;
-        lastUpdated = new Date();
     }
 
     public WorkerContext(HttpServletRequest request) {
@@ -36,8 +33,6 @@ public class WorkerContext {
         keysRead = Integer.parseInt(request.getParameter("keysRead"));
         keysWritten = Integer.parseInt(request.getParameter("keysWritten"));
         lastUpdated = new Date();
-
-        // TODO ? set last updated status time / last received UPDATE: done, right? ^
     }
 
     public int getPort() {
@@ -103,4 +98,5 @@ public class WorkerContext {
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
+
 }
