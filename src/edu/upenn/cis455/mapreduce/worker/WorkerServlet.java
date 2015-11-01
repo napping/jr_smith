@@ -1,13 +1,15 @@
 package edu.upenn.cis455.mapreduce.worker;
 
+import edu.upenn.cis455.mapreduce.Context;
 import edu.upenn.cis455.mapreduce.Job;
 import edu.upenn.cis455.mapreduce.enumeration.WorkerStatus;
 import edu.upenn.cis455.mapreduce.utils.MyHttpURLConnection;
+import edu.upenn.cis455.mapreduce.utils.Utils;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.*;
 import javax.servlet.http.*;
 
@@ -27,6 +29,11 @@ public class WorkerServlet extends HttpServlet {
     int numWorkers;
     private Map<String, String> workerAddresses;
     Job jobInstance;
+
+    Context mapContext;
+    Context reduceContext;
+
+    LinkedList<BufferedReader> allReaders;
 
     public void init() {
         ServletConfig config = getServletConfig();
@@ -48,6 +55,51 @@ public class WorkerServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
         out.println("<html><head><title>Worker</title></head>");
         out.println("<body>Hi, I am the worker!</body></html>");
+    }
+
+
+    public void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws java.io.IOException
+    {
+        switch (request.getRequestURI()) {
+
+            case "/runmap":
+                context.setStatus(WorkerStatus.MAPPING);
+                context.setJob(request.getParameter("job"));
+                try {
+                    jobInstance = (Job) Class.forName(context.getJob()).newInstance();
+
+                } catch (ClassNotFoundException | InstantiationException |
+                        IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+
+                this.inputDir = request.getParameter("input");
+                this.numMapThreads = Integer.parseInt(request.getParameter("numThreads"));
+                this.numWorkers = Integer.parseInt(request.getParameter("numWorkers"));
+
+                for (int i = 0; i < this.numWorkers; i++) {
+                    String name = "worker" + i;
+                    this.workerAddresses.put(name, request.getParameter(name));
+                }
+
+                BigInteger sha1 = new BigInteger("2").pow(160).divide(
+                        new BigInteger(Integer.toString(numWorkers)));
+
+                this.mapContext = new MapContext();
+
+                this.allReaders = Utils.getFileReaders(
+                        new File(storageDir + inputDir));
+
+                break;
+
+            case "/runreduce":
+                // TODO
+                break;
+
+            default:
+                // TODO
+        }
     }
 
     public class StatusThread extends Thread {
@@ -83,48 +135,53 @@ public class WorkerServlet extends HttpServlet {
         }
     }
 
-    public void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws java.io.IOException
-    {
-        switch (request.getRequestURI()) {
+    public class MapThread extends Thread {
 
-            case "/runmap":
-                context.setStatus(WorkerStatus.MAPPING);
-                context.setJob(request.getParameter("job"));
-                try {
-                    jobInstance = (Job) Class.forName(context.getJob()).newInstance();
+        public void run() {
+            while (true) {
+                String line = null;
+                synchronized (allReaders) {
+                    BufferedReader reader = allReaders.peekFirst();
+                    try {
+                        line = reader.readLine();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    if (line == null) {
+                        if (allReaders.isEmpty()) {
+                            break;
+                        }
+                        allReaders.pollFirst();
 
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    } else {
+                        context.setKeysRead(context.getKeysRead() + 1);
+                    }
                 }
 
-                this.inputDir = request.getParameter("input");
-                this.numMapThreads = Integer.parseInt(request.getParameter("numThreads"));
-
-                this.numWorkers = Integer.parseInt(request.getParameter("numWorkers"));
-
-                for (int i = 0; i < this.numWorkers; i++) {
-                    String name = "worker" + i;
-                    this.workerAddresses.put(name, request.getParameter(name));
+                if (line != null) {
+                    String[] keyValue = line.split("\t");
+                    jobInstance.map(keyValue[0], keyValue[1], mapContext);
                 }
+            }
+        }
+    }
 
-                break;
+    public class MapContext implements Context {
+        @Override
+        public void write(String key, String value) {
+            // TODO
+        }
+    }
 
-            case "/runreduce":
-                // TODO
-                break;
-
-            default:
-                // TODO
+    public class ReduceContext implements Context {
+        @Override
+        public void write(String key, String value) {
+            // TODO
         }
     }
 }
+
 
 
 
