@@ -8,7 +8,6 @@ import edu.upenn.cis455.mapreduce.utils.Utils;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -287,81 +286,58 @@ public class WorkerServlet extends HttpServlet {
 
         // Terribly hardcoded
         public void run() {
-            try {
                 while (true) {
                     String line;
                     synchronized (readReduce) {
-                        if (currKey == null) {
-                            if ((line = readReduce.readLine()) == null) {
-                                break;
-                            }
-                            synchronized (context) {
-                                context.setKeysRead(context.getKeysRead() + 1);
-                            }
+                        try {
+                            if (currKey == null) {
+                                if ((line = readReduce.readLine()) == null) {
+                                    break;
+                                }
+                                synchronized (context) {
+                                    context.setKeysRead(context.getKeysRead() + 1);
+                                }
 
-                            Tuple t = new Tuple(line);
-                            currKey = t.key;
+                                Tuple t = new Tuple(line);
+                                currKey = t.key;
 
-                            if (keyValues.containsKey(t.key)) {
-                                keyValues.get(currKey).add(t.value);
-                            } else {
-                                keyValues.put(currKey, new ArrayList<String>());
-                                keyValues.get(currKey).add(t.value);
-                            }
-
-                        }
-
-                        while ((line = readReduce.readLine()) != null) {
-                            synchronized (context) {
-                                context.setKeysRead(context.getKeysRead() + 1);
-                            }
-
-                            Tuple t = new Tuple(line);
-                            if (currKey.equals(t.key)) {
                                 if (keyValues.containsKey(t.key)) {
                                     keyValues.get(currKey).add(t.value);
                                 } else {
                                     keyValues.put(currKey, new ArrayList<String>());
                                     keyValues.get(currKey).add(t.value);
                                 }
-                            } else {
 
                             }
 
+                            while ((line = readReduce.readLine()) != null) {
+                                synchronized (context) {
+                                    context.setKeysRead(context.getKeysRead() + 1);
+                                }
 
-                        }
+                                Tuple t = new Tuple(line);
+                                if (currKey.equals(t.key)) {
+                                    if (keyValues.containsKey(t.key)) {
+                                        keyValues.get(currKey).add(t.value);
+                                    } else {
+                                        keyValues.put(currKey, new ArrayList<String>());
+                                        keyValues.get(currKey).add(t.value);
+                                    }
 
-
-
-                        if (keyValues == null) {
-                            if (prevLine == "")
-                                prevLine = readReduce.readLine();
-                            if (prevLine == null)
-                                break;
-                            kv = new Tuple(prevLine);
-                        }
-
-                        while (((line = readReduce.readLine()) != null)
-                                && (key = line.split("\t")[0].trim())
-                                .equals(kv.getKey())) {
-                            kv.addValue(line.split("\t")[1].trim());
-                            synchronized (context) {
-                                context.setKeysRead(context.getKeysRead() + 1);
+                                } else {
+                                    jobInstance.reduce(currKey,
+                                            (String[]) keyValues.get(currKey).toArray(),
+                                            reduceContext);
+                                    currKey = t.key;
+                                    break;
+                                }
                             }
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
-                    System.out.println("Key: " + kv.getKey()+" Values: "+kv.getValues());
-                    String[] values = new String[kv.getValues().size()];
-                    kv.getValues().toArray(values);
-                    myJob.reduce(kv.getKey(), values, reduceContext);
-
-                    prevLine = line;
-                    kv = null;
-                    key = "";
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -424,7 +400,15 @@ public class WorkerServlet extends HttpServlet {
 
         @Override
         public void write(String key, String value) {
-            // TODO
+            try {
+                writer.write(key + "\t" + value + "\n");
+                synchronized (context) {
+                    context.setKeysWritten(context.getKeysWritten() + 1);
+                }
+
+            } catch (IOException e){
+                e.printStackTrace();
+            }
         }
     }
 
@@ -478,6 +462,9 @@ public class WorkerServlet extends HttpServlet {
                     break;
                 }
             }
+
+            key = key.trim();
+            value = value.trim();
         }
 
     }

@@ -1,7 +1,6 @@
 package edu.upenn.cis455.mapreduce.worker;
 
 import edu.upenn.cis455.mapreduce.enumeration.WorkerStatus;
-
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
