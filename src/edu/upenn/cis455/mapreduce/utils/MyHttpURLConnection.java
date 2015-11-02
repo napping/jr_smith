@@ -48,7 +48,7 @@ public class MyHttpURLConnection {
         br.close();
     }
 
-    public void sendPostRequest() throws IOException {
+    public int sendPostRequest() throws IOException {
         String bodyString = paramSJ.toString();
 
         BufferedWriter out = new BufferedWriter(
@@ -71,9 +71,11 @@ public class MyHttpURLConnection {
 
         out.close();
         in.close();
+
+        return 200;
     }
 
-    public void sendPostFileRequest(File f) throws IOException {
+    public int sendPostFileRequest(File f) throws IOException {
         byte[] data = Files.readAllBytes(f.toPath());
         OutputStream out = socket.getOutputStream();
         byte[] line1 = ("POST " + url.getPath() + " HTTP/1.1\r\n").getBytes();
@@ -87,6 +89,8 @@ public class MyHttpURLConnection {
         out.write(line4);
 
         out.write(data);
+
+        return 200; // TODO idk
 
     }
 }

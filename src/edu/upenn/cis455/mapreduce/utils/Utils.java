@@ -1,10 +1,9 @@
 package edu.upenn.cis455.mapreduce.utils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author brishi
@@ -24,4 +23,39 @@ public class Utils {
 
         return readers;
     }
+
+    public static void newDir(File f) {
+        if (!f.mkdir()) {
+            deleteDir(f);
+            f.mkdir();
+        }
+    }
+
+    public static void deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                deleteDir(f);
+            }
+        }
+        file.delete();
+    }
+
+    public static List<BufferedWriter> getFileWriters(int numWorkers, String storageDirectory) {
+
+		List<BufferedWriter> writers = new ArrayList<>();
+		for (int i = 0; i < numWorkers; i++) {
+			File file = new File(storageDirectory + "/spool-out/worker" + i);
+
+			try {
+				writers.add(new BufferedWriter(new FileWriter(file)));
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		return writers;
+	}
 }
+
